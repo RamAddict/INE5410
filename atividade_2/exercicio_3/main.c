@@ -1,5 +1,8 @@
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <stdio.h>
-
+#include <string.h>
 //    (pai)
 //      |
 //   filho_1 
@@ -20,8 +23,20 @@
 
 int main(int argc, char** argv) {
     printf("Processo principal iniciado\n");
+    int son = fork();
+    if (son == 0) {
+        printf("processo %d iniciado\n", getpid());
+        fflush(stdout);
+        execlp("grep", "grep", "silver","text", (char *)NULL);
 
-    // ....
-    
+    } else {
+        int status;
+        waitpid(son, &status, 0);
+        if (status == 0) {
+            printf("Filho retornou com código %d, encontrou silver\n",status);
+        } else {
+            printf("Filho retornou com código %d, não encontrou silver\n", WEXITSTATUS(status));
+        } 
+    }
     return 0;
 }
