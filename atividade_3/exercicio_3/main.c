@@ -13,10 +13,17 @@
 // v                                      v
 double* load_vector(const char* filename, int* out_size);
 
+struct info {
+    double* a;
+    double* b;
+    double result;
+    int position;
 
+};
+void* sum(void* data);
 int main(int argc, char* argv[]) {
     srand(time(NULL));
-
+    
     //Temos argumentos suficientes?
     if(argc < 4) {
         printf("Uso: %s n_threads a_file b_file\n"
@@ -53,17 +60,37 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    //Calcula produto escalar. Paralelize essa parte
-    double result = 0;
-    for (int i = 0; i < a_size; ++i) 
-        result += a[i] * b[i];
+    pthread_t treds[n_threads];
+    struct info data;
+
+    data.a = a;
+    data.b = b;
+
+    for (int i = 0; i != a_size; ++i) {
+        data.position = i % a_size;
+        pthread_create(&treds[i], NULL, sum, (void*)&data); //how does this not work?
+        pthread_join(treds[i], NULL);
+    }
+
+    
+    
+    
     
     //Imprime resultado
-    printf("Produto escalar: %g\n", result);    
+    printf("Produto escalar: %g\n", data.result);    
 
     //Libera memória
     free(a);
     free(b);
 
     return 0;
+}
+void* sum(void* data) {
+    double* a = (*((struct info*) data)).a;
+    double* b =  (*((struct info*) data)).b;
+    double* result = &(*((struct info*) data)).result;
+    int i = (*((struct info*) data)).position;
+
+    *result += a[i] * b[i];
+    return NULL;
 }

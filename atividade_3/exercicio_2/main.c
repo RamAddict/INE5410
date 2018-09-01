@@ -12,7 +12,13 @@
 // |         usado como 2o retorno! <-----+
 // v                                      v
 double* load_vector(const char* filename, int* out_size);
-
+void* vector_addr(void* data);
+struct info {
+    double* a;
+    double* b;
+    double* c;
+    int position;
+};
 
 int main(int argc, char* argv[]) {
     srand(time(NULL));
@@ -63,11 +69,18 @@ int main(int argc, char* argv[]) {
     // do argumento e fugiu pro caribe. É essa computação que você precisa 
     // paralelizar
     pthread_t treds[n_threads];
-    void* retorno;
+    //void* retorno;
+    struct info data;
+    data.a = a;
+    data.b = b;
+    data.c = c;
+
     for (int i = 0; i != n_threads; i++) {
-        int modder = &(i%a_size);
-        pthread_create(&treds[i], NULL, vector_addr, (void*)modder);
-    }
+        data.position = i % a_size;
+        pthread_create(&treds[i], NULL, vector_addr,(void*) &data); //como q &data funciona? no sentido de que nao deveria
+        pthread_join(treds[i], NULL);                               //tendo em em vista que i endereço de data eh apenas um numero... i dont get it, thats it
+   }                                                                //minha solução seria criar um ponteiro de struct, dizer q ele aponta pro endereço de data e usar ele aqui. 
+                                                                    //but that doesnt work, da coredump no final das contas
     
     //Imprime resultados
     if (!silent) {
@@ -83,6 +96,13 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-void* vector_addr(void* position) {
-    int a = 
+void* vector_addr(void* data) {
+    int pos = (*((struct info*) data)).position;
+    double* a = (*((struct info*) data)).a;
+    double* b = (*((struct info*) data)).b;
+    double* c = (*((struct info*) data)).c;
+
+    *(c + pos) = *(b + pos) + *(a + pos);
+    // c[pos] = a[pos] + b[pos];
+    return NULL;
 }
