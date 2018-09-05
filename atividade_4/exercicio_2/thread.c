@@ -22,31 +22,32 @@ extern int linha_atual, coluna_atual;
 extern pthread_mutex_t matrix_mutex;
 
 // Todas as worker threads executam essa função paralelamente.
-// Em algum lugar aqui ocorre um data race. Quando há mais de uma thread, 
+// Em algum lugar aqui ocorre um data race. Quando há mais de uma thread,
 // o resultado da multiplicação quase sempre fica errado.
-// 
-// Há uma seção de código nessa função que é conflituosa: duas ou mais 
-// threads entram em condição de corrida ao ler/alterar algumas variáveis 
-// globais. Você deve identificar essa seção e protegê-la com um mutex. Se 
-// você considerar que a função inteira é essa seção, o problema estará 
-// resolvido, mas NÃO HAVERÁ PARALELISMO SENDO EXPLORADO. 
-// 
+//
+// Há uma seção de código nessa função que é conflituosa: duas ou mais
+// threads entram em condição de corrida ao ler/alterar algumas variáveis
+// globais. Você deve identificar essa seção e protegê-la com um mutex. Se
+// você considerar que a função inteira é essa seção, o problema estará
+// resolvido, mas NÃO HAVERÁ PARALELISMO SENDO EXPLORADO.
+//
 // O programa precisa ser RÁPIDO E CORRETO.
 void *multiplicar_thread(void *arg) {
     int i;
     int minha_linha, minha_coluna;
 
     while (linha_atual < tamanho_matriz) {
+        pthread_mutex_lock(&matrix_mutex);
         minha_linha = linha_atual;
         minha_coluna = coluna_atual;
-
         coluna_atual += 1;
         if (coluna_atual >= tamanho_matriz) {
             coluna_atual = 0;
             linha_atual += 1;
         }
+        pthread_mutex_unlock(&matrix_mutex);
 
-        if (minha_linha >= tamanho_matriz)  
+        if (minha_linha >= tamanho_matriz)
             break;
 
         for (i = 0; i < tamanho_matriz; i++) {

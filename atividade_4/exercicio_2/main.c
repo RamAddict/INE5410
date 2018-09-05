@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
         printf("Uso: %s [tamanho da matriz] [threads]\n", argv[0]);
         return 1;
     }
-    
+
     //Parseia argumentos
     tamanho_matriz = atoi(argv[1]);
     int num_threads = atoi(argv[2]);
@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
 
     //Crias as threads
     pthread_t threads[num_threads];
+    pthread_mutex_init(&matrix_mutex, NULL);
     for (int i = 0; i < num_threads; i++) {
         pthread_create(&threads[i], NULL, multiplicar_thread, NULL);
     }
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < num_threads; i++) {
         pthread_join(threads[i], NULL);
     }
+    pthread_mutex_destroy(&matrix_mutex);
 
     //Imprime as matrizes em um arquivo resultado.txt
     imprimir_matrizes();

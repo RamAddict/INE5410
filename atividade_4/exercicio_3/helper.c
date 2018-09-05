@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void consumir_resultados(int n, int** results) {
+void imprimir_resultados(int n, int** results) {
     for (int i = 0; i < n; ++i) 
         printf("results[%d]: %d\n", i, *results[i]);
 }
