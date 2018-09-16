@@ -24,6 +24,11 @@ void cozinha_init(int cozinheiros, int bocas, int frigideiras, int garcons,
 
 }
 void cozinha_destroy(struct semaphores* sems) {
+    free(sems->sem_cozinheiros);
+    free(sems->sem_bocas);
+    free(sems->sem_frigideiras);
+    free(sems->sem_garcons);
+    free(sems->sem_balcao);
     sem_destroy((sems)->sem_cozinheiros);
     sem_destroy((sems)->sem_bocas);
     sem_destroy((sems)->sem_frigideiras);
@@ -196,7 +201,7 @@ void processar_pedido(pedido_t p, struct semaphores* sems) {
         break;
         case PEDIDO_CARNE:;
         pthread_t cook_for_meat;
-        pthread_create(&cook_for_meat, NULL, pedido_carnes, NULL);
+        pthread_create(&cook_for_meat, NULL, pedido_carnes, (void*)NULL);
         
         break;
         case PEDIDO__SIZE:
