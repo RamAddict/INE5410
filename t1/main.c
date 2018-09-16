@@ -7,7 +7,6 @@
 #include <semaphore.h>
 #include "cozinha.h"
 
-
 static struct option cmd_opts[] = {
     {"cozinheiros", required_argument, 0, 'c'},
     {"bocas",       required_argument, 0, 'b'},
@@ -85,9 +84,8 @@ int main(int argc, char** argv) {
     struct semaphores* sems = (struct semaphores*) malloc(sizeof(struct semaphores)*1);
     //! inicia semáforos
     cozinha_init(cozinheiros, bocas_total, frigideiras, 
-                 garcons, balcao, sems);  
-
-    
+                 garcons, balcao, sems);
+    printf("depois do cozinha init\n\n");
     char* buf = (char*)malloc(4096);
     int next_id = 1;
     int ret = 0;
@@ -109,6 +107,6 @@ int main(int argc, char** argv) {
     free(buf);
     cozinha_destroy(sems);
     free(sems);
-
+    printf("kill me\n");
     return 0;
 }
