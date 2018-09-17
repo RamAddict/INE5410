@@ -76,22 +76,11 @@ int main(int argc, char *argv[]) {
     // n_itens produtos e o consumidor os consuma
     for (int i = 0; i != 2; i++)
       pthread_join(treds[i] ,NULL);
+    
     // ....
 
     //Libera memória do buffer
     free(buffer);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     sem_destroy(&semaforo_produtor);

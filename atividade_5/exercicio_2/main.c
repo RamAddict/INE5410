@@ -13,7 +13,8 @@ void *ConsumidorFunc(void *arg);
 
 int indice_produtor, indice_consumidor, tamanho_buffer;
 int* buffer;
-
+sem_t semaforo_produtor;
+sem_t semaforo_consumidor;
 //Você deve fazer as alterações necessárias nesta função e na função
 //ConsumidorFunc para que usem semáforos para coordenar a produção
 //e consumo de elementos do buffer.
@@ -27,7 +28,9 @@ void *ProdutorFunc(void *arg) {
         else 
             produto = produzir(i); //produz um elemento normal
         indice_produtor = (indice_produtor + 1) % tamanho_buffer; //calcula posição próximo elemento
+        sem_wait(&semaforo_produtor);
         buffer[indice_produtor] = produto; //adiciona o elemento produzido à lista
+        sem_post(&semaforo_consumidor);
     }
     return NULL;
 }
@@ -35,7 +38,9 @@ void *ProdutorFunc(void *arg) {
 void *ConsumidorFunc(void *arg) {
     while (1) {
         indice_consumidor = (indice_consumidor + 1) % tamanho_buffer; //Calcula o próximo item a consumir
+        sem_wait(&semaforo_consumidor);
         int produto = buffer[indice_consumidor]; //obtém o item da lista
+        sem_post(&semaforo_produtor);
         //Podemos receber um produto normal ou um produto especial
         if (produto >= 0)
             consumir(produto); //Consome o item obtido.
@@ -61,10 +66,23 @@ int main(int argc, char *argv[]) {
     indice_consumidor = 0;
     buffer = malloc(sizeof(int) * tamanho_buffer);
 
-    // Crie threads e o que mais for necessário para que n_produtores
-    // threads criem cada uma n_itens produtos e o n_consumidores os
-    // consumam.
-
+    sem_init(&semaforo_consumidor, 0, 0);
+    sem_init(&semaforo_produtor, 0, tamanho_buffer);
+    pthread_t treds_prod[n_produtores];
+    pthread_t treds_cons[n_consumidores];
+    //PRODUTORES
+    for (int i = 0; i != n_produtores; i++) 
+        pthread_create(&treds_prod[i], NULL, ProdutorFunc, (void*)&itens);
+    //CONSUMIDORES
+    for (int i = 0; i != n_consumidores; i++)
+        pthread_create(&treds_cons[0], NULL, ConsumidorFunc, (void*)&itens);
+    // Crie threads e o que mais for necessário para que uma produtor crie
+    // n_itens produtos e o consumidor os consuma
+    for (int i = 0; i != n_produtores; i++)
+        pthread_join(treds_prod[i] ,NULL);
+    for (int i = 0; i != n_consumidores; i++)    
+        pthread_join(treds_cons[i] ,NULL);
+        
     // ....
     
     //Libera memória do buffer
