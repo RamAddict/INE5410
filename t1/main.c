@@ -7,6 +7,13 @@
 #include <semaphore.h>
 #include "cozinha.h"
 
+
+extern sem_t sem_cozinheiros;
+extern sem_t sem_bocas;
+extern sem_t sem_frigideiras;
+extern sem_t sem_garcons;
+extern sem_t sem_balcao;
+
 static struct option cmd_opts[] = {
     {"cozinheiros", required_argument, 0, 'c'},
     {"bocas",       required_argument, 0, 'b'},
@@ -81,11 +88,10 @@ int main(int argc, char** argv) {
     check_missing(garcons, "garcons");
     check_missing(balcao, "balcao");
     //! struct with the semaphores
-    struct semaphores* sems = (struct semaphores*) malloc(sizeof(struct semaphores)*1);
     //! inicia semáforos
     cozinha_init(cozinheiros, bocas_total, frigideiras, 
-                 garcons, balcao, sems);
-    printf("depois do cozinha init\n\n");
+                 garcons, balcao);
+    
     char* buf = (char*)malloc(4096);
     int next_id = 1;
     int ret = 0;
@@ -93,8 +99,9 @@ int main(int argc, char** argv) {
         pedido_t p = {next_id++, pedido_prato_from_name(buf)};
         if (!p.prato) 
             fprintf(stderr, "Pedido inválido descartado: \"%s\"\n", buf);
-        else
-            processar_pedido(p, sems);
+        else {
+            processar_pedido(p);
+        }
     }
     if (ret != EOF) {
         perror("Erro lendo pedidos de stdin:");
@@ -105,8 +112,6 @@ int main(int argc, char** argv) {
 
     
     free(buf);
-    cozinha_destroy(sems);
-    free(sems);
-    printf("kill me\n");
+    cozinha_destroy();
     return 0;
 }

@@ -10,7 +10,7 @@
 
 static void simulation_sleep(unsigned minutes) {
     // Cada minuto do mundo simulado simulação equivale a 200 ms no mundo real
-    unsigned ms = 1000*minutes;
+    unsigned ms = 200*minutes;
     struct timespec ts = {ms/1000, (ms % 1000)*1000000L};
     nanosleep(&ts, NULL);
 }
