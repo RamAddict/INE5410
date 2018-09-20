@@ -195,11 +195,11 @@ void cozinha_destroy() {
 
         cortar_legumes(legumes);
 
-        //sem_wait(&sem_bocas); consirando que fazer o caldo precisa de uma boca
+        sem_wait(&sem_bocas);// consirando que fazer o caldo precisa de uma boca
 
         caldo_t* caldo =  preparar_caldo(agua);
 
-        //sem_post(&sem_bocas);
+        sem_post(&sem_bocas);
 
         sem_wait(&sem_bocas);
 
