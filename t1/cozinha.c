@@ -26,7 +26,8 @@ void cozinha_destroy() {
     sem_destroy(&sem_garcons);
     sem_destroy(&sem_balcao);
 }
-    void* worker(void* work) {
+
+void* worker(void* work) {
         struct tarefa* job = (struct tarefa*) work;
         switch(job->type) {
             case 0:;
@@ -50,18 +51,16 @@ void cozinha_destroy() {
         return NULL;
     }
 //////////////////////////////////CARNE///////////////////////////////////////////////////////////////////
-    void* pedido_carne(void * arg) {
-
-        pedido_t pedido = *((pedido_t*) arg);
+   void pedido_carne(pedido_t* pedido) {
 
             //! tentando ocupar um cozinheiro
             sem_wait(&sem_cozinheiros);
 
-            printf("Pedido %d (CARNE) iniciando!\n", pedido.id);
-            
+            printf("Pedido %d (CARNE) iniciando!\n", pedido->id);
+
             //! Pegando carne
             carne_t* carne1 = create_carne();
-            
+
             //! Cortando carne 5MIN [DE]
             cortar_carne(carne1);
             //! Temperar carne 3MIN [DE]
@@ -71,7 +70,7 @@ void cozinha_destroy() {
             sem_wait(&sem_bocas);
             //! Privatizando uma frigideira
             sem_wait(&sem_frigideiras);
-            
+
             //! Grelhando carne 3MIN [DE]
             grelhar_carne(carne1);
 
@@ -80,16 +79,16 @@ void cozinha_destroy() {
             sem_post(&sem_bocas);
             //! Devolvendo uma frigideira
             sem_post(&sem_frigideiras);
-          
-            //! cria prato
-            prato_t* plate = create_prato(pedido);
 
-            
+            //! cria prato
+            prato_t* plate = create_prato(*pedido);
+
+
             //! emprata a carne
             empratar_carne(carne1, plate);
             //! tentando colocar no balcão
             sem_wait(&sem_balcao);
-            
+
             //! notificando prato no balcão
             notificar_prato_no_balcao(plate);
             //! libera o cozinheiro que era responsável por este prato
@@ -104,17 +103,16 @@ void cozinha_destroy() {
             //! libera garçom que estava entregando o prato
             sem_post(&sem_garcons);
 
-            free((pedido_t*) arg);
-            return NULL;
+            free(pedido);
         }  // end pedido_carnes
 
 //////////////////////////////////SPAGET///////////////////////////////////////////////////////////////////
-    void* pedido_spaghetti(void* arg) {
-        pedido_t pedido = *((pedido_t*) arg);
+   void pedido_spaghetti(pedido_t* pedido) {
+
         //! tentando ocupar um cozinheiro
         sem_wait(&sem_cozinheiros);
 
-        printf("Pedido %d (SPAGHETTI) iniciando!\n", pedido.id);
+        printf("Pedido %d (SPAGHETTI) iniciando!\n", pedido->id);
 
         //! criando treads p fazer coisas nao DE
         pthread_t treds[2];
@@ -140,19 +138,23 @@ void cozinha_destroy() {
         dourar_bacon(bacon);
         sem_post(&sem_bocas);
         sem_post(&sem_frigideiras);
-        pthread_join(treds[1], NULL);
-
         spaghetti_t* moms = create_spaghetti();
         sem_wait(&sem_bocas);
+
+        pthread_join(treds[1], NULL);
+        
         cozinhar_spaghetti(moms, agua);
         sem_post(&sem_bocas);
-         //! posso empratar sem verificar se terminei de esquentar o molho
-         //em funcao do tempo que ele vai
-         //levar necessariamente p/ cozinhar o spaget
-        prato_t* plate = create_prato(pedido);
+
+        prato_t* plate = create_prato(*pedido);
 
         //! empratar spaghetti
+
+        pthread_join(treds[0], NULL);
+
         empratar_spaghetti(moms, molho, bacon, plate);
+        //! libera agua depois de empratar
+        destroy_agua(agua);
         //! espera ter espaço no balcão
         sem_wait(&sem_balcao);
         //printf("prato pronto %d, cozinheiro liberado\n", pedido.id);
@@ -169,22 +171,22 @@ void cozinha_destroy() {
         entregar_pedido(plate);
         //! libera garçom que estava entregando o prato
         sem_post(&sem_garcons);
-        free((pedido_t*) arg);
-        return NULL;
+        free(pedido);
+
     }  // end pedido_spaghetti
 
-    void* pedido_sopa(void* arg) {
-        pedido_t pedido = *((pedido_t*) arg);
+   void pedido_sopa(pedido_t* pedido) {
 
         sem_wait(&sem_cozinheiros);
-        printf("Pedido %d (SOPA) iniciando!\n", pedido.id);
+        printf("Pedido %d (SOPA) iniciando!\n", pedido->id);
 
         pthread_t treds[1];
-        
+
         agua_t* agua = create_agua();
 
         struct tarefa job;
 
+        //! ferver_agua
         job.type = 1;
         job.ingrediente1 = (void*) agua;
 
@@ -197,8 +199,9 @@ void cozinha_destroy() {
 
         sem_wait(&sem_bocas);// consirando que fazer o caldo precisa de uma boca
 
-        caldo_t* caldo =  preparar_caldo(agua);
+        pthread_join(treds[0], NULL);
 
+        caldo_t* caldo =  preparar_caldo(agua);
         sem_post(&sem_bocas);
 
         sem_wait(&sem_bocas);
@@ -207,10 +210,10 @@ void cozinha_destroy() {
 
         sem_post(&sem_bocas);
 
-        prato_t* plate = create_prato(pedido);
+        prato_t* plate = create_prato(*pedido);
 
         empratar_sopa(legumes, caldo, plate);
-
+        
         sem_wait(&sem_balcao);
 
         notificar_prato_no_balcao(plate);
@@ -218,45 +221,45 @@ void cozinha_destroy() {
         sem_post(&sem_cozinheiros);
 
         sem_wait(&sem_garcons);
-        
+
         sem_post(&sem_balcao);
 
         entregar_pedido(plate);
 
         sem_post(&sem_garcons);
-        free((pedido_t*) arg);
-        return NULL;
+        free(pedido);
+
     }
 
 
-void processar_pedido(pedido_t p) {
-    pedido_t* pedido = (pedido_t*) malloc(sizeof(pedido_t));
-    *pedido = p;
-    switch(p.prato) {
+    void* processar_pedido(void *arg) {
+    pedido_t* pedido = (pedido_t*)arg;
+    switch(pedido->prato) {
         case PEDIDO_NULL:
         printf("prato null, larga de zueira");
+        free(pedido);
         break;
-        case PEDIDO_SPAGHETTI:;
-        printf("Pedido %d (SPAGHETTI) submetido!\n", p.id);
-        pthread_t cook_for_spaghetti;
-        pthread_create(&cook_for_spaghetti, NULL, pedido_spaghetti, (void*)pedido);
-        break;
-        case PEDIDO_SOPA:;
-        printf("Pedido %d (SOPA) submetido!\n", p.id);
-        pthread_t cook_for_soup;
-        pthread_create(&cook_for_soup, NULL, pedido_sopa, (void*)pedido);
-        break;
-        case PEDIDO_CARNE:;
-        printf("Pedido %d (CARNE) submetido!\n", p.id);
-        pthread_t cook_for_meat;
-        pthread_create(&cook_for_meat, NULL, pedido_carne, (void*)pedido);
 
+        case PEDIDO_SPAGHETTI:
+        printf("Pedido %d (SPAGHETTI) submetido!\n", pedido->id);
+        pedido_spaghetti(pedido);
         break;
+        
+        case PEDIDO_SOPA:
+        printf("Pedido %d (SOPA) submetido!\n", pedido->id);
+        pedido_sopa(pedido);
+        break;
+        
+        case PEDIDO_CARNE:
+        printf("Pedido %d (CARNE) submetido!\n", pedido->id);
+        pedido_carne(pedido);
+        break;
+        
         case PEDIDO__SIZE:
-
+        free(pedido);
         break;
-
     }
+    return NULL;
 }
 
 

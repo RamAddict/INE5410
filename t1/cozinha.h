@@ -15,12 +15,10 @@ struct tarefa {
 
 extern void  cozinha_init(int cozinheiros, int bocas, int frigideiras, int garcons, int tam_balcao);
 extern void  cozinha_destroy();
-extern void  processar_pedido(pedido_t p);
-extern void* preparar_carne(void* arg);
-extern void* preparar_sopa(void* arg);
-extern void* pedido_spaghetti(void* arg);
-void* pedido_spaghetti(void* arg);
-void* pedido_carne(void * arg);
+extern void*  processar_pedido(void* p);
+void pedido_spaghetti(pedido_t* pedido);
+void pedido_carne(pedido_t* pedido);
+void pedido_sopa(pedido_t* pedido);
 void* worker(void* work);
 
 #endif /*__COZINHA_H__*/

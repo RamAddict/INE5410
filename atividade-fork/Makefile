@@ -1,4 +1,4 @@
-CFLAGS=-pthread -D_POSIX_C_SOURCE=200809L #-g -O0 -fsanitize=address
+CFLAGS=
 LFLAGS=
 OUTPUT=program
 LIBS=-lm
@@ -50,8 +50,11 @@ build/program: $(OBJS)
 
 # Prepara .tar.gz pra submissão no moodle
 # Note que antes de preparar o tar.gz, é feito um clean
-submission:
-	@bash ./.submission-packer.sh
+submission: clean
+	SUBNAME=$$(basename "$$(pwd)"); \
+		cd ..; \
+		rm -fr "$$SUBNAME.tar.gz"; \
+		tar zcf "$$SUBNAME.tar.gz" "$$SUBNAME"
 
 # Limpa binários
 clean:

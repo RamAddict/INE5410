@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
             printf("Filho retornou com código %d, encontrou silver\n",status);
         } else {
             printf("Filho retornou com código %d, não encontrou silver\n", WEXITSTATUS(status));
-        } 
+        }
     }
     return 0;
 }

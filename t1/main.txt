@@ -96,28 +96,19 @@ int main(int argc, char** argv) {
     int next_id = 1;
     int ret = 0;
     int pedidos = 0;
-    int size_pedido_array = 10;
-    pthread_t* pedido_array = (pthread_t*) malloc(sizeof(pthread_t)*size_pedido_array); 
+    pthread_t* pedido_array = (pthread_t*) malloc(sizeof(pthread_t)*10); 
   
     while((ret = scanf("%4095s", buf)) > 0) {
-        pedido_t* p = malloc(sizeof(pedido_t));
+        pedido_t *p = malloc(sizeof(pedido_t));
         p->id = next_id++;
         p->prato = pedido_prato_from_name(buf);
         //*p = {next_id++, pedido_prato_from_name(buf)};
-        if (!p->prato) {
+        if (!p->prato)
             fprintf(stderr, "Pedido inválido descartado: \"%s\"\n", buf);
-            free(p);
-        }
         else {
-            if(pedidos == sizeof(pthread_t[size_pedido_array])/sizeof(pthread_t)) {
-                size_pedido_array*=2;
-                pthread_t* pedido_array_new = (pthread_t*) realloc(pedido_array, sizeof(pthread_t[size_pedido_array]));
-                if (pedido_array_new == NULL ) {
-                    printf("Failed");
-                } else {
-                    pedido_array = pedido_array_new;
-                }
-            }
+            if(pedidos == sizeof(pedido_array)/sizeof(pthread_t))
+                pedido_array = (pthread_t*) realloc(pedido_array, sizeof(pedido_array)*2);
+
             pthread_create(&pedido_array[pedidos], NULL, processar_pedido, (void*)p);
             pedidos++;
         }
