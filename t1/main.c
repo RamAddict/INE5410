@@ -93,7 +93,6 @@ int main(int argc, char** argv) {
                  garcons, balcao);
 
     char* buf = (char*)malloc(4096);
-    int next_id = 1;
     int ret = 0;
     int pedidos = 0;
     int size_pedido_array = 10;
@@ -101,14 +100,14 @@ int main(int argc, char** argv) {
   
     while((ret = scanf("%4095s", buf)) > 0) {
         pedido_t* p = malloc(sizeof(pedido_t));
-        p->id = next_id++;
         p->prato = pedido_prato_from_name(buf);
-        //*p = {next_id++, pedido_prato_from_name(buf)};
+        
         if (!p->prato) {
             fprintf(stderr, "Pedido inválido descartado: \"%s\"\n", buf);
             free(p);
         }
         else {
+            p->id = pedidos +1;
             if(pedidos == sizeof(pthread_t[size_pedido_array])/sizeof(pthread_t)) {
                 size_pedido_array*=2;
                 pthread_t* pedido_array_new = (pthread_t*) realloc(pedido_array, sizeof(pthread_t[size_pedido_array]));
