@@ -204,9 +204,9 @@ void pedido_sopa(pedido_t* pedido) {
 
     cortar_legumes(legumes);
 
-    sem_wait(&sem_bocas);// consirando que fazer o caldo precisa de uma boca
-
     pthread_join(treds[0], NULL);
+
+    sem_wait(&sem_bocas);// consirando que fazer o caldo precisa de uma boca
 
     caldo_t* caldo =  preparar_caldo(agua);
     sem_post(&sem_bocas);
