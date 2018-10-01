@@ -95,21 +95,31 @@ int main(int argc, char** argv) {
     char* buf = (char*)malloc(4096);
     int ret = 0;
     int pedidos = 0;
+
+    //!Inicializando variavel de tamanho do array de pedidos com 10
     int size_pedido_array = 10;
-    pthread_t* pedido_array = (pthread_t*) malloc(sizeof(pthread_t)*size_pedido_array); 
-  
+
+    pthread_t* pedido_array = (pthread_t*) malloc(sizeof(pthread_t)*size_pedido_array);
+
     while((ret = scanf("%4095s", buf)) > 0) {
+        //! Alocando espaço de memória para o pedido
         pedido_t* p = malloc(sizeof(pedido_t));
         p->prato = pedido_prato_from_name(buf);
-        
+
         if (!p->prato) {
             fprintf(stderr, "Pedido inválido descartado: \"%s\"\n", buf);
+            //! Se o prato for inválido, o pedido é descartado e o espaço de memória já é liberado
             free(p);
         }
         else {
+            //! Define o ID do pedido como pedidos +1, para que o primeiro seja 1
             p->id = pedidos +1;
+            //! Caso o número de pedidos seja igual a capacidade máxima do pedido_array
+
             if(pedidos == size_pedido_array) {
+                //! O tamanho do array é dobrado
                 size_pedido_array*=2;
+                //! E o array de pedidos é realocado para uma memória 2 vezes maior
                 pthread_t* pedido_array_new = (pthread_t*) realloc(pedido_array, sizeof(pthread_t[size_pedido_array]));
                 if (pedido_array_new == NULL ) {
                     printf("Failed");
@@ -117,7 +127,9 @@ int main(int argc, char** argv) {
                     pedido_array = pedido_array_new;
                 }
             }
+            //! Cria a thread correspondente ao pedido, passando a ela o pedido feito.
             pthread_create(&pedido_array[pedidos], NULL, processar_pedido, (void*)p);
+            //! Incrementa a variável pedidos
             pedidos++;
         }
     }
@@ -126,9 +138,11 @@ int main(int argc, char** argv) {
     }
 ///////////////////////////////////////////////////////////////////////////////////////////////
     for(int i = 0;i < pedidos;i++){
+      //! Espera que todos os pedidos sejam entregues
       pthread_join(pedido_array[i], NULL);
     }
 
+    //! Após o fim de todos os pedidos, libera todos os espaços até então alocados.
     free(buf);
     free(pedido_array);
     cozinha_destroy();
