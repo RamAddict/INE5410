@@ -96,7 +96,9 @@ void pedido_carne(pedido_t* pedido) {
         //! tentando colocar no balcão
         sem_wait(&sem_balcao);
 
-        //! notificando prato no balcão
+        //! como quem notifica prato no balcao é o cozinheiro,
+        //! entao optamos por notificar_prato antes de liberar o cozinheiro
+        //! pense no cozinheiro batendo um sino, p avisar o garçom
         notificar_prato_no_balcao(plate);
         //! libera o cozinheiro que era responsável por este prato
         sem_post(&sem_cozinheiros);
@@ -164,8 +166,10 @@ void pedido_spaghetti(pedido_t* pedido) {
     destroy_agua(agua);
     //! espera ter espaço no balcão
     sem_wait(&sem_balcao);
-    //printf("prato pronto %d, cozinheiro liberado\n", pedido.id);
-    //! notificando prato no balcão
+
+    //! como quem notifica prato no balcao é o cozinheiro,
+    //! entao optamos por notificar_prato antes de liberar o cozinheiro
+    //! pense no cozinheiro batendo um sino, p avisar o garçom
     notificar_prato_no_balcao(plate);
     //! libera o cozinheiro que era responsável por este prato
     sem_post(&sem_cozinheiros);
@@ -223,6 +227,9 @@ void pedido_sopa(pedido_t* pedido) {
     
     sem_wait(&sem_balcao);
 
+    //! como quem notifica prato no balcao é o cozinheiro,
+    //! entao optamos por notificar_prato antes de liberar o cozinheiro
+    //! pense no cozinheiro batendo um sino, p avisar o garçom
     notificar_prato_no_balcao(plate);
 
     sem_post(&sem_cozinheiros);
@@ -238,12 +245,14 @@ void pedido_sopa(pedido_t* pedido) {
 
 }
 
-
+ //! recebe o pedido da main, aqui ele decide o que vai fazer.
+ //! quem chegou aqui executa o pedido, e dentro do pedido é feito o wait 
+ //! no semaforo dos cozinheiros.
 void* processar_pedido(void *arg) {
     pedido_t* pedido = (pedido_t*)arg;
     switch(pedido->prato) {
         case PEDIDO_NULL:
-        printf("prato null, larga de zueira");
+        printf("prato null");
         free(pedido);
         break;
 

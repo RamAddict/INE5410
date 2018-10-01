@@ -48,7 +48,7 @@ void check_missing(int value, const char* name) {
 
 int main(int argc, char** argv) {
     int bocas_total = 0, bocas = 7, frigideiras = 4, fogoes = 2,
-        cozinheiros = 6, garcons = 3, balcao = 9, c = 0;
+        cozinheiros = 6, garcons = 4, balcao = 9, c = 0;
     while (c >= 0) {
         int long_idx;
         c = getopt_long(argc, argv, "cbfrga", cmd_opts, &long_idx);
