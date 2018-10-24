@@ -33,7 +33,7 @@ public class MergeSortThread<T extends Comparable<T>> implements MergeSort<T>{
             thread.join();
         } catch (InterruptedException ex) {
             Logger.getLogger(MergeSortThread.class.getName()).log(Level.SEVERE, null, ex);
-        }        
+        }
         left = myrun.output;
         return MergeSortHelper.merge(left, right);
     }

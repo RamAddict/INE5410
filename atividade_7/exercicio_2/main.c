@@ -13,12 +13,10 @@ void init_matrix(double* m, int rows, int columns) {
 
 void mult_matrix(double* out, double* left, double *right, 
                  int rows_left, int cols_left, int cols_right) {
-    int i, j, k;
     #pragma omp parallel for schedule(dynamic, 1)
-    for (i = 0; i < rows_left; ++i) {
-        for (j = 0; j < cols_right; ++j) {
-            #pragma omp parallel for firstprivate(i, j) schedule(guided)
-            for (k = 0; k < cols_left; ++k) 
+    for (int i = 0; i < rows_left; ++i) {
+        for (int j = 0; j < cols_right; ++j) {
+            for (int k = 0; k < cols_left; ++k) 
                 out[i*cols_right+j] = left[i*cols_left+k]*right[j*cols_left+k];
         }
     }
