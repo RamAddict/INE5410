@@ -51,15 +51,15 @@ public class TransactionProcessor implements AutoCloseable {
     }
     try {
         //Thread worker;
-        boolean ok = (fromAcc.getBalance() > price);
-        // boolean ok = fromAcc.withdraw(price);
+        // boolean ok = (fromAcc.getBalance() > price);
+        boolean ok = fromAcc.withdraw(price);
         if (!ok) {
             orderBook.post(sell);     //try later
             buy.notifyCancellation(); //fail
         } else {
             try {
                 //throws if client does not have the stock
-                fromAcc.withdraw(price);
+                //fromAcc.withdraw(price);
                 toAcc.removeStock(buy.getStock());
                 
                 toAcc.deposit(price);
