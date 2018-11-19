@@ -9,8 +9,19 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class TransactionProcessor implements AutoCloseable {
+    ExecutorService executorService = Executors.newCachedThreadPool();
 
     public void process(@Nonnull final OrderBook orderBook,
+                        @Nonnull final Transaction trans)
+        {
+                    executorService.submit(new Runnable() {
+                        public void run() {
+                            process_(orderBook, trans);
+                        }
+                    });
+        }
+
+    public void process_(@Nonnull final OrderBook orderBook,
                         @Nonnull final Transaction trans) {
         Order buy = trans.getBuy(), sell = trans.getSell();
         Account fromAcc = buy.getBroker().getAccount(buy.getInvestor());
@@ -32,74 +43,45 @@ public class TransactionProcessor implements AutoCloseable {
 
         //transfer the money
     if (fromAcc.getId() > toAcc.getId()) {
-        
         toAcc.getLock().lock();
-        try {
-            fromAcc.getLock().lock();
-            try {
-                //Thread worker;
-                boolean ok = (fromAcc.getBalance() > price);
-                // boolean ok = fromAcc.withdraw(price);
-                if (!ok) {
-                    orderBook.post(sell);     //try later
-                    buy.notifyCancellation(); //fail
-                } else {
-                    try {
-                        //throws if client does not have the stock
-                        fromAcc.withdraw(price);
-                        toAcc.removeStock(buy.getStock());
-                        
-                        toAcc.deposit(price);
-                        fromAcc.addStock(buy.getStock());
-                        sell.notifyExecution(); //done!
-                        buy.notifyExecution();  //done!
-                    } catch (NoSuchStockException e) {
-                        //fromAcc.deposit(price);
-                        sell.notifyCancellation(); //fail
-                        orderBook.post(buy);       //try later
-                    }
-                }
-            } finally {
-                //worker.join();
-                toAcc.getLock().unlock();
-            }
-        } finally {
-            fromAcc.getLock().unlock();
-        }
-    } else {
-
         fromAcc.getLock().lock();
-        try {
-            toAcc.getLock().lock();
+    } else {
+        fromAcc.getLock().lock();
+        toAcc.getLock().lock();
+    }
+    try {
+        //Thread worker;
+        boolean ok = (fromAcc.getBalance() > price);
+        // boolean ok = fromAcc.withdraw(price);
+        if (!ok) {
+            orderBook.post(sell);     //try later
+            buy.notifyCancellation(); //fail
+        } else {
             try {
-                    boolean ok = (fromAcc.getBalance() > price);                if (!ok) {
-                    orderBook.post(sell);     //try later
-                    buy.notifyCancellation(); //fail
-                } else {
-                    try {
-                        //throws if client does not have the stock
-                        fromAcc.withdraw(price);
-                        toAcc.removeStock(buy.getStock());
-
-                        toAcc.deposit(price);
-                        fromAcc.addStock(buy.getStock());
-                        sell.notifyExecution(); //done!
-                        buy.notifyExecution();  //done!
-                    } catch (NoSuchStockException e) {
-                        sell.notifyCancellation(); //fail
-                        orderBook.post(buy);       //try later
-                    }
-                }
-            } finally {
-                toAcc.getLock().unlock();
+                //throws if client does not have the stock
+                fromAcc.withdraw(price);
+                toAcc.removeStock(buy.getStock());
+                
+                toAcc.deposit(price);
+                fromAcc.addStock(buy.getStock());
+                sell.notifyExecution(); //done!
+                buy.notifyExecution();  //done!
+            } catch (NoSuchStockException e) {
+                fromAcc.deposit(price);
+                sell.notifyCancellation(); //fail
+                orderBook.post(buy);       //try later
             }
-        } finally {
-            fromAcc.getLock().unlock();
         }
+    } finally {
+        //worker.join();
+        toAcc.getLock().unlock();
+        fromAcc.getLock().unlock();
     }
     }
 
     @Override
     public void close()  {
+        executorService.shutdown();
+        executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
     }
 }

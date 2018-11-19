@@ -18,6 +18,11 @@ public class OrderBook implements AutoCloseable {
     private final @Nonnull TransactionProcessor transactionProcessor;
     private final @Nonnull PriorityQueue<Order> sellOrders, buyOrders;
     private boolean closed = false;
+    Thread post_boi = new Thread(new Runnable(){
+        public void run(){
+            tryMatch();
+        }
+    });
 
     public OrderBook(@Nonnull String stockCode,
                      @Nonnull TransactionProcessor transactionProcessor) {
@@ -35,9 +40,18 @@ public class OrderBook implements AutoCloseable {
                 return Double.compare(r.getPrice(), l.getPrice());
             }
         });
+        post_boi.start();
     }
 
     public synchronized void post(@Nonnull Order order) {
+        es.submit(new Runnable() {
+        public void run() {
+            post_(order);
+        }
+        });
+    }
+
+    public synchronized void post_(@Nonnull Order order) {
         if (!order.getStock().equals(stockCode)) {
             String msg = toString() + " cannot process orders for " + order.getStock();
             throw new IllegalArgumentException(msg);
@@ -50,35 +64,28 @@ public class OrderBook implements AutoCloseable {
         (order.getType() == BUY ? buyOrders : sellOrders).add(order);
         
         order.notifyQueued();
-         tryMatch();
     }
 
     private void tryMatch() {
-        Order sell, buy;
-        // Enquanto ordens de venda e compra
-        while ((sell = sellOrders.peek()) != null && (buy = buyOrders.peek()) != null) {
-            // Se valor de venda for menor ou igual ao de compra
-            if (sell.getPrice() <= buy.getPrice()) {
-        	    Order sellRemove = sellOrders.remove();
-                Order buyRemove = buyOrders.remove();
-                final Transaction trans = new Transaction(sellRemove, buyRemove);
-                sell.notifyProcessing();
-                buy.notifyProcessing();
-                Thread worker = new Thread() {
-                    public void run() {
-                        transactionProcessor.process(OrderBook.this, trans);
-        		    }
-                };
-                worker.start();
-                try {
-                    worker.join();
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(OrderBook.class.getName()).log(Level.SEVERE, null, ex);
+        while (!closed)
+        {
+            Order sell, buy;
+            // Enquanto ordens de venda e compra
+            while ((sell = sellOrders.remove()) != null && (buy = buyOrders.remove()) != null) {
+                // Se valor de venda for menor ou igual ao de compra
+                if (sell.getPrice() <= buy.getPrice()) {
+                    // Order sellRemove = sellOrders.remove();
+                    // Order buyRemove = buyOrders.remove();
+                    final Transaction trans = new Transaction(sellRemove, buyRemove);
+                    sell.notifyProcessing();
+                    buy.notifyProcessing();
+                    transactionProcessor.process(OrderBook.this, trans);
+                    assert sellRemove == sell;
+                    assert buyRemove == buy;
+                } else {
+                    buyOrders.add(buy);
+                    sellOrders.add(sell); // maybe wait?
                 }
-                assert sellRemove == sell;
-                assert buyRemove == buy;
-            } else {
-                break; // maybe wait?
             }
         }
     }
